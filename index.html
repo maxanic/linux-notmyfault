@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CortexCrash Control Center</title>
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body { background-color: #120a1c; color: #e3dcf0; font-family: "Helvetica Neue", sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none">
+
+    <!-- NAVIGATION HEADER BAR -->
+    <header class="bg-[#1e132b] h-16 flex items-center justify-between px-8 shadow-md">
+        <div class="flex items-center space-x-6">
+            <span class="text-white text-xl font-bold tracking-wider">CORTEX_CRASH</span>
+            <nav class="hidden md:flex space-x-4">
+                <span class="text-[#00ffcc] bg-[#120a1c] text-sm font-semibold px-4 py-1.5 rounded-md cursor-pointer">↑ Crash-Zentrum</span>
+                <span class="text-[#b3a7c4] text-sm px-3 py-1.5 cursor-pointer">⚙ Optionen</span>
+                <span class="text-[#b3a7c4] text-sm px-3 py-1.5 cursor-pointer">ⓘ Über</span>
+            </nav>
+        </div>
+        <div class="flex items-center">
+            <span class="bg-[#120a1c] text-[#00ffcc] text-xs font-bold px-4 py-1.5 rounded-full border border-[#1e132b]">✓ ENGINE CONNECTED</span>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-6 py-12 flex flex-col items-center justify-center">
+        <div class="bg-[#1e132b] rounded-2xl p-8 shadow-xl border border-[#271a38] text-center max-w-md w-full mx-auto mb-12">
+            <h2 class="text-white text-lg font-bold mb-6">Interaktive Kontroll-Konsole</h2>
+            <div class="flex items-center justify-center space-x-4 mb-8">
+                <label class="text-[#b3a7c4] text-sm font-medium">Zielgröße (MB):</label>
+                <input type="number" id="leak-amount" value="256" class="w-24 bg-[#120a1c] text-[#00ffcc] font-bold text-center py-2 rounded-lg border border-[#3a2552] focus:outline-none">
+            </div>
+            <button onclick="triggerLeak()" class="w-full bg-[#ff4a7c] hover:bg-[#d63f69] text-white font-bold py-3 px-6 rounded-xl transition duration-200 shadow-md tracking-wide cursor-pointer">
+                Ausgewähltes Speicherleck auslösen
+            </button>
+        </div>
+    </main>
+
+    <!-- UNTERE FUNKTIONS-KACHELN -->
+    <section class="max-w-6xl w-full mx-auto px-6 pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div onclick="sendTrigger('pagefault', 'MEMORY PAGE FAULT')" class="bg-[#1e132b] hover:bg-[#2a1a3d] p-6 rounded-2xl text-center border border-[#271a38] cursor-pointer transition transform hover:-translate-y-1 shadow-md group">
+            <h3 class="text-white font-bold text-base mb-1 group-hover:text-[#00ffcc]">⚡ Page Fault</h3>
+            <p class="text-[#b3a7c4] text-xs">Status: Bereit</p>
+            <span class="block mt-8 text-[10px] text-[#6b5b82] uppercase font-bold tracking-wider">Bad Pointer Read</span>
+        </div>
+
+        <div onclick="sendTrigger('nullwrite', 'NULL POINTER WRITE')" class="bg-[#1e132b] hover:bg-[#2a1a3d] p-6 rounded-2xl text-center border border-[#271a38] cursor-pointer transition transform hover:-translate-y-1 shadow-md group">
+            <h3 class="text-white font-bold text-base mb-1 group-hover:text-[#00ffcc]">🛰 Null Pointer</h3>
+            <p class="text-[#b3a7c4] text-xs">Status: Bereit</p>
+            <span class="block mt-8 text-[10px] text-[#6b5b82] uppercase font-bold tracking-wider">Illegal Memory Write</span>
+        </div>
+
+        <div onclick="sendTrigger('panic', 'HARD KERNEL PANIC')" class="bg-[#1e132b] hover:bg-[#fc4445] p-6 rounded-2xl text-center border border-[#271a38] cursor-pointer transition transform hover:-translate-y-1 shadow-md group">
+            <h3 class="text-white font-bold text-base mb-1 group-hover:text-white">❌ Hard Panic</h3>
+            <p class="text-[#b3a7c4] text-xs group-hover:text-white/80">Status: Bereit</p>
+            <span class="block mt-8 text-[10px] text-[#6b5b82] group-hover:text-white/60 uppercase font-bold tracking-wider">Instant Kernel Halt</span>
+        </div>
+
+        <div onclick="sendTrigger('hang', 'CPU CORE DEADLOCK')" class="bg-[#1e132b] hover:bg-[#fc4445] p-6 rounded-2xl text-center border border-[#271a38] cursor-pointer transition transform hover:-translate-y-1 shadow-md group">
+            <h3 class="text-white font-bold text-base mb-1 group-hover:text-white">🔒 CPU Deadlock</h3>
+            <p class="text-[#b3a7c4] text-xs group-hover:text-white/80">Status: Bereit</p>
+            <span class="block mt-8 text-[10px] text-[#6b5b82] group-hover:text-white/60 uppercase font-bold tracking-wider">Infinite Core Spin</span>
+        </div>
+    </section>
+
+    <footer class="max-w-6xl w-full mx-auto px-6 py-4 border-t border-[#1e132b] text-[11px] text-[#6b5b82]">
+        <span>© 2026 CORTEX_CRASH · Quellcode · Discord-Server · Datenschutzerklärung</span>
+    </footer>
+
+    <script>
+        function sendTrigger(command, name) {
+            fetch('/api/trigger', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'cmd=' + encodeURIComponent(command)
+            }).then(res => {
+                if(!res.ok) alert("Fehler beim Senden an den Kernel.");
+            });
+        }
+
+        function triggerLeak() {
+            const amount = document.getElementById('leak-amount').value;
+            if(!amount || amount <= 0) return alert("Bitte eine gültige MB-Größe eintragen!");
+            
+            fetch('/api/trigger', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'cmd=' + encodeURIComponent('leak:' + amount)
+            }).then(res => {
+                if(!res.ok) alert("Fehler beim Senden an den Kernel.");
+            });
+        }
+    </script>
+</body>
+</html>
