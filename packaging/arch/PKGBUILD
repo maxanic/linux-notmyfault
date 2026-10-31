@@ -1,0 +1,7 @@
+pkgname=linux-notmyfault
+pkgver=2.0
+pkgrel=1
+pkgdesc="Linux equivalent of Sysinternals NotMyFault with Tkinter GUI"
+arch=('x86_64')
+depends=('python' 'tk' 'dkms')
+makedepends=('linux-headers')
